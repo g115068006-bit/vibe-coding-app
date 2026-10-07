@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rassard 呆萌管家 - 穿搭與三餐抽籤小幫手</title>
+    <style>
+        :root {
+            --primary: #6C5CE7;
+            --secondary: #A29BFE;
+            --bg: #F8F9FA;
+            --card-bg: #FFFFFF;
+            --text: #2D3436;
+            --accent: #FF7675;
+        }
+
+        body {
+            font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        header h1 {
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        .weather-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(135deg, #a8c0ff, #3f2b96);
+            color: white;
+        }
+
+        .weather-info select {
+            padding: 5px 10px;
+            border-radius: 8px;
+            border: none;
+            font-size: 14px;
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.1s, background 0.2s;
+        }
+
+        .btn:hover {
+            background: #5b4cc4;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .result-box {
+            text-align: center;
+            padding: 15px;
+            background: #F1F2F6;
+            border-radius: 12px;
+            margin-top: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            min-height: 24px;
+        }
+
+        .slot-animation {
+            animation: bounce 0.3s ease-in-out infinite alternate;
+            color: var(--accent);
+        }
+
+        @keyframes bounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(-5px); }
+        }
+
+        .tag {
+            display: inline-block;
+            background: var(--secondary);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            margin-right: 5px;
+        }
+
+        ul {
+            padding-left: 20px;
+            margin: 0;
+        }
+
+        li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>🤖 Rassard 呆萌小管家</h1>
+        <p>解決每日「穿什麼」與「吃什麼」的選擇困難症！</p>
+    </header>
+
+    <!-- 1. 當前環境與穿搭建議 -->
+    <div class="card weather-section">
+        <div>
+            <h3 style="margin:0;">🌤️ 今日天氣情境</h3>
+            <p id="outfit-recommend" style="margin: 8px 0 0 0; font-size: 14px; opacity: 0.9;">建議穿搭：短袖 T-shirt + 薄外套</p>
+        </div>
+        <div class="weather-info">
+            <select id="weather-select" onchange="updateWeather()">
+                <option value="sunny">☀️ 晴天 (28°C)</option>
+                <option value="rainy">🌧️ 下雨 (22°C)</option>
+                <option value="cold">❄️ 寒流 (15°C)</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- 2. 三餐美食抽籤器 -->
+    <div class="card">
+        <h3>🍱 三餐吃什麼？（轉盤抽籤）</h3>
+        <p style="font-size: 14px; color: #666;">不知道吃什麼嗎？讓 Rassard 幫你決定！</p>
+        
+        <button class="btn" onclick="drawFood()">🎲 開始抽籤決定餐點</button>
+        
+        <div id="food-result" class="result-box">按下按鈕開始抽籤！</div>
+    </div>
+
+    <!-- 3. 抽籤歷史紀錄 -->
+    <div class="card">
+        <h3>📜 今日決策歷史</h3>
+        <ul id="history-list">
+            <li style="color:#888;">尚未有紀錄</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+    // 餐點庫
+    const foodDatabase = [
+        "牛肉麵 🍜", "韓式豆腐鍋 🥘", "健康雞胸肉便當 🥗", 
+        "酸辣粉 🌶️", "麥當勞超值晚餐 🍔", "日式拉麵 🍥", 
+        "滷肉飯 + 貢丸湯 🥣", "義大利麵 🍝", "水餃 15 顆 🥟"
+    ];
+
+    // 穿搭資料庫
+    const outfitDatabase = {
+        sunny: "☀️ 晴天建議：短袖 T-shirt + 透氣長褲，記得補充水分！",
+        rainy: "🌧️ 雨天建議：防水防風外套 + 休閒長褲 + 避開防水布鞋！",
+        cold: "❄️ 寒流建議：發熱衣 + 發熱大學 T + 厚外套，注意保暖！"
+    };
+
+    // 切換天氣穿搭
+    function updateWeather() {
+        const selected = document.getElementById("weather-select").value;
+        document.getElementById("outfit-recommend").innerText = outfitDatabase[selected];
+    }
+
+    // 抽籤邏輯 (Vibe Coding 實現隨機滾動動畫)
+    function drawFood() {
+        const resultBox = document.getElementById("food-result");
+        let counter = 0;
+        resultBox.classList.add("slot-animation");
+
+        // 模擬轉盤滾動效果
+        const interval = setInterval(() => {
+            const tempIndex = Math.floor(Math.random() * foodDatabase.length);
+            resultBox.innerText = `🔄 Rassard 思考中... ${foodDatabase[tempIndex]}`;
+            counter++;
+
+            if (counter > 15) {
+                clearInterval(interval);
+                resultBox.classList.remove("slot-animation");
+                
+                // 最終結果
+                const finalChoice = foodDatabase[Math.floor(Math.random() * foodDatabase.length)];
+                resultBox.innerText = `🎉 今天就吃：${finalChoice}`;
+                
+                // 新增至歷史紀錄
+                addHistory(finalChoice);
+            }
+        }, 100);
+    }
+
+    // 紀錄歷史
+    function addHistory(food) {
+        const historyList = document.getElementById("history-list");
+        if (historyList.children[0].innerText === "尚未有紀錄") {
+            historyList.innerHTML = "";
+        }
+        
+        const now = new Date();
+        const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+        
+        const li = document.createElement("li");
+        li.innerHTML = `<span class="tag">${timeStr}</span> 決定吃了 <strong>${food}</strong>`;
+        historyList.prepend(li);
+    }
+</script>
+
+</body>
+</html>
